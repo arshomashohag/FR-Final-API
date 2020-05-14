@@ -100,33 +100,38 @@ def search_by_image():
                                                              article_type,
                                                              gender,
                                                              color)
+
+                # os.remove(os.path.join(app_config['QUERY_IMAGE_PATH'], filename))
                 data = []
                 for rec in recommendations:
                     data.append({
                         'id': str(rec[0]),
                         'similarity': str(rec[1]),
                         'articleType': rec[2],
-                        'productDisplayName': rec[3]
+                        'productDisplayName': rec[3],
+                        'gender': rec[4],
+                        'baseColour': rec[5]
                     })
 
                 return jsonify({
                     'success': True,
-                    'data': data
+                    'data': data,
+                    'image_name': filename
                 })
             else:
                 return jsonify({'success': False, 'message': 'Invalid image'})
         else:
             filtered_products = all_meta
 
-            if 'master_category' in request.form:
-                filtered_products = filtered_products[
-                    filtered_products['masterCategory'] == request.form['master_category']
-                ]
+            # if 'master_category' in request.form:
+            #     filtered_products = filtered_products[
+            #         filtered_products['masterCategory'] == request.form['master_category']
+            #     ]
 
-            if 'sub_category' in request.form:
-                filtered_products = filtered_products[
-                    filtered_products['subCategory'] == request.form['sub_category']
-                    ]
+            # if 'sub_category' in request.form:
+            #     filtered_products = filtered_products[
+            #         filtered_products['subCategory'] == request.form['sub_category']
+            #         ]
             if 'article_type' in request.form:
                 filtered_products = filtered_products[filtered_products['articleType'] == request.form['article_type']]
 

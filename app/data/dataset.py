@@ -31,6 +31,7 @@ class ApparelDataset(Dataset):
         self.apparel_meta['genderArticle'] = self.apparel_meta.apply(
             lambda row: row['gender'] + '-' + row['articleType'], axis=1
         )
+        self.apparel_meta.fillna('', inplace=True)
         self.root_dir = root_dir
         self.transform = transform
 

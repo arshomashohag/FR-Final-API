@@ -197,47 +197,73 @@ class Inference:
                             "Beauty Accessories", "Sports Accessories", "Vouchers", "Home Furnishing"]
 
             temp_candidate_images = self.candidate_images
+            modified_metadata = all_metadata
+            sub_modified_metadata = None
+            sub_class_article_gender = None
 
             if article_type is None:
                 print('Classifying')
                 sub_categories, sub_cat_sim_score = classify_image(labels, other_labels, image_path)
                 print(sub_categories)
-                modified_metadata = all_metadata[all_metadata['subCategory'].isin(sub_categories)]
+                sub_modified_metadata = all_metadata[all_metadata['subCategory'].isin(sub_categories)]
+                sub_class_article_gender = sub_modified_metadata['genderArticle']
 
             else:
                 temp_candidate_images = temp_candidate_images[temp_candidate_images['articleType'] == article_type]
                 modified_metadata = all_metadata[all_metadata['articleType'] == article_type]
 
             if gender is not None:
+                if sub_modified_metadata is not None:
+                    sub_modified_metadata = sub_modified_metadata[sub_modified_metadata['gender'] == gender]
                 modified_metadata = modified_metadata[modified_metadata['gender'] == gender]
                 temp_candidate_images = temp_candidate_images[temp_candidate_images['gender'] == gender]
 
             if color is not None:
+                if sub_modified_metadata is not None:
+                    sub_modified_metadata = sub_modified_metadata[sub_modified_metadata['baseColour'] == color]
                 modified_metadata = modified_metadata[modified_metadata['baseColour'] == color]
                 temp_candidate_images = temp_candidate_images[temp_candidate_images['baseColour'] == color]
 
-            if gender is None or article_type is None:
-                gender, article_type, candidate_sim_score = utils.get_article_type(new_img_embedding,
-                                                                                   temp_candidate_images)
-                modified_candidate_metadata = []
+            if article_type is None or gender is None:
+                c_gender, c_article_type, candidate_sim_score, sub_article, sub_sim_score = utils.get_article_type(
+                    new_img_embedding,
+                    temp_candidate_images,
+                    sub_class_article_gender)
+
+                print(c_article_type)
+                print(sub_article)
+
+                if sub_modified_metadata is not None:
+                    modified_candidate_metadata = sub_modified_metadata
+                else:
+                    modified_candidate_metadata = modified_metadata
+
                 if gender is None:
-                    modified_candidate_metadata = modified_metadata[modified_metadata['gender'] == gender]
+                    modified_candidate_metadata = modified_candidate_metadata[
+                        modified_candidate_metadata['gender'] == c_gender]
 
                 if article_type is None:
-                    if gender is None:
-                        modified_candidate_metadata = modified_candidate_metadata[
-                            modified_candidate_metadata['articleType'] == article_type
-                            ]
-                    else:
-                        modified_candidate_metadata = modified_metadata[
-                            modified_metadata['articleType'] == article_type]
+                    modified_candidate_metadata = modified_candidate_metadata[
+                        modified_candidate_metadata['articleType'] == c_article_type]
 
                 if len(modified_candidate_metadata) > 0:
+                    print('Only candidate')
                     modified_metadata = modified_candidate_metadata
                 else:
-                    if sub_cat_sim_score < candidate_sim_score:
-                        modified_metadata = all_metadata[all_metadata['articleType'] == article_type]
-                        modified_metadata = modified_metadata[modified_metadata['gender'] == gender]
+                    if sub_modified_metadata is not None:
+                        # modified_metadata = modified_metadata[(modified_metadata['articleType'] == c_article_type)
+                        #                                       |
+                        #                                       (modified_metadata['articleType'] == sub_article)]
+                        if sub_sim_score >= 0.8 or (candidate_sim_score-sub_sim_score) <= 0.05:
+                            print('Both candidate and sub-cat')
+                            modified_metadata = modified_metadata[(modified_metadata['articleType'] == c_article_type)
+                                                                  |
+                                                                  (modified_metadata['articleType'] == sub_article)]
+                        else:
+                            print('Only candidate on invalid sub-cat')
+                            print(sub_sim_score)
+                            modified_metadata = modified_metadata[modified_metadata['articleType'] == c_article_type]
+                        modified_metadata = modified_metadata[modified_metadata['gender'] == c_gender]
 
             modified_metadata['emb'] = modified_metadata.apply(lambda row: self.embedding_map[row['id']], axis=1)
             print(article_type)

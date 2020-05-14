@@ -26,3 +26,14 @@ def get_banners(name):
         return send_from_directory(app_config['STATIC_ROOT'] + '/banners', name)
 
     return send_from_directory(app_config['STATIC_ROOT'], 'notfound.png')
+
+
+@app.route('/query-image/<path:name>')
+def get_query_image(name):
+    static_path = os.path.join(app.root_path, 'static')
+    img_path = os.path.join(static_path, 'query_images/' + name)
+
+    if os.path.exists(img_path):
+        return send_from_directory(app_config['STATIC_ROOT'] + '/query_images', name)
+
+    return send_from_directory(app_config['STATIC_ROOT'], 'notfound.png')

@@ -46,13 +46,14 @@ def read_image_by_id(image_id):
     print('No image found!')
 
 
-def get_article_type(emb_new_item, candidate_image_meta):
+def get_article_type(emb_new_item, candidate_image_meta, sub_class_article_gender=None):
     """
     Calculate similarity between a new and unknown image and all the candidate product images.
     Return the gender and article type of most similar candidate
 
     Parameters
     ----------
+    :param sub_class_article_gender: Concatenated gender and article of products in classified sub-categories
     :param emb_new_item: feature map or embedding of new image
     :param candidate_image_meta: all candidate image meta with their respective embeddings
     :return: gender and articleType of the most similar candidate product image
@@ -67,13 +68,27 @@ def get_article_type(emb_new_item, candidate_image_meta):
 
     tmp = 0
     most_similar = None
+
+    most_similar_in_subcategory = None
+    temp_msis = 0
+    unique_gender_article = None
+    if sub_class_article_gender is not None:
+        unique_gender_article = sub_class_article_gender.unique()
+
     for ind, row in candidate_image_meta.iterrows():
         sim_score = 1 - spatial.distance.cosine(emb_new_item, row.emb)
         if sim_score > tmp:
             most_similar = row
             tmp = sim_score
+        if unique_gender_article is not None and row.genderArticle in unique_gender_article:
+            if sim_score > temp_msis:
+                most_similar_in_subcategory = row
+                temp_msis = sim_score
     print(tmp)
-    return most_similar['gender'], most_similar['articleType'], tmp
+    if most_similar_in_subcategory is not None:
+        return most_similar['gender'], most_similar['articleType'], tmp, most_similar_in_subcategory['articleType'], \
+               temp_msis
+    return most_similar['gender'], most_similar['articleType'], tmp, None, None
 
 
 def generate_candidates(apparel_data, save_as_pickle=True):
@@ -187,7 +202,12 @@ def get_top_100_similar_product(query_image_embedding, filtered_meta):
     i = 0
     for meta in filtered_meta.iterrows():
         recommendations.append(
-            (meta[1]['id'], sim_scores[i], meta[1]['articleType'], meta[1]['productDisplayName']))
+            (meta[1]['id'],
+             sim_scores[i],
+             meta[1]['articleType'],
+             meta[1]['productDisplayName'],
+             meta[1]['gender'],
+             meta[1]['baseColour']))
         i = i + 1
 
     recommendations = sorted(recommendations, key=lambda x: x[1], reverse=True)
