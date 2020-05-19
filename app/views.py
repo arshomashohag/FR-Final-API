@@ -123,15 +123,15 @@ def search_by_image():
         else:
             filtered_products = all_meta
 
-            # if 'master_category' in request.form:
-            #     filtered_products = filtered_products[
-            #         filtered_products['masterCategory'] == request.form['master_category']
-            #     ]
+            if 'article_type' not in request.form and 'master_category' in request.form:
+                filtered_products = filtered_products[
+                    filtered_products['masterCategory'] == request.form['master_category']
+                ]
 
-            # if 'sub_category' in request.form:
-            #     filtered_products = filtered_products[
-            #         filtered_products['subCategory'] == request.form['sub_category']
-            #         ]
+            if 'article_type' not in request.form and 'sub_category' in request.form:
+                filtered_products = filtered_products[
+                    filtered_products['subCategory'] == request.form['sub_category']
+                    ]
             if 'article_type' in request.form:
                 filtered_products = filtered_products[filtered_products['articleType'] == request.form['article_type']]
 
